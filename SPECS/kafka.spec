@@ -9,18 +9,18 @@ BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-root
 BuildArch:	x86_64
 Packager:	$Id$
 Requires:	java
+Requires(pre): /usr/sbin/useradd, /usr/bin/getent
 
 %description
 This RPM installs kafka
 
 %pre
-echo "pre"
-echo "rhel=%{?rhel}"
-echo "\$1=$1";
+getent group kafka >/dev/null || groupadd -r kafka
+getent passwd kafka >/dev/null || \
+    useradd -r -g kafka -d /home/kafka -s /sbin/nologin \
+    -c "To run kafka and zookeeper" kafka
 exit 0
 
-%prep
-exit 0
 
 %build
 exit 0
@@ -30,6 +30,7 @@ rm -rf %{buildroot}
 mkdir -p %{buildroot}%{_sysconfdir}
 mkdir -p %{buildroot}/opt
 mkdir -p %{buildroot}/var/lib/zookeeper
+mkdir -p %{buildroot}/var/lib/kafka
 cd %{buildroot}/opt && tar xzvf %{_sourcedir}/kafka_2.12-0.11.0.1.tgz 
 mv %{buildroot}/opt/kafka_2.12-0.11.0.1 %{buildroot}/opt/kafka
 
@@ -74,12 +75,14 @@ echo "rhel=%{?rhel}"
 echo "\$1=$1";
 rm -rf /opt/kafka
 rm -rf /var/lib/zookeeper
+rm -rf /var/lib/kafka
 exit 0
 
 
 %files
-%attr(700,root,root) /opt/kafka
-%attr(700,root,root) /var/lib/zookeeper
+%attr(700,kafka,kafka) /opt/kafka
+%attr(700,kafka,kafka) /var/lib/zookeeper
+%attr(700,kafka,kafka) /var/lib/kafka
 %if 0%{?rhel} == 7
 %attr(644,root,root) %{_sysconfdir}/systemd/system/kafka.service
 %attr(644,root,root) %{_sysconfdir}/systemd/system/zookeeper.service
